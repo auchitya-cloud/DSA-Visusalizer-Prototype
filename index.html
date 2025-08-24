@@ -12,48 +12,58 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: white;
-            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         h1 {
             text-align: center;
             margin-bottom: 30px;
-            font-size: 2.2em;
+            font-size: 2.5em;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .controls {
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
-            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
-        .control-row {
+        .control-group {
             display: flex;
-            flex-wrap: wrap;
             gap: 15px;
-            margin-bottom: 15px;
             align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
-        select, button, input[type="text"] {
+        select, button, input {
             padding: 10px 15px;
             border: none;
             border-radius: 8px;
             font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        select, input[type="text"] {
             background: rgba(255,255,255,0.9);
             color: #333;
+        }
+
+        input[type="range"] {
+            background: transparent;
         }
 
         button {
@@ -61,36 +71,33 @@
             color: white;
             cursor: pointer;
             font-weight: bold;
-            transition: transform 0.2s;
         }
 
         button:hover {
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
         button:disabled {
-            background: #666;
+            background: rgba(255,255,255,0.3);
             cursor: not-allowed;
             transform: none;
         }
 
-        input[type="range"] {
-            width: 150px;
-        }
-
-        .main-area {
+        .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 20px;
+            height: 70vh;
         }
 
-        .panel {
-            background: rgba(255,255,255,0.15);
+        .visualization-panel, .code-panel {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
             border-radius: 15px;
             padding: 20px;
-            backdrop-filter: blur(10px);
-            min-height: 400px;
+            border: 1px solid rgba(255,255,255,0.2);
+            overflow: hidden;
         }
 
         .panel-title {
@@ -101,324 +108,372 @@
         }
 
         #canvas {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
             border-radius: 10px;
-            width: 100%;
-            max-width: 500px;
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
         .code-container {
-            max-height: 350px;
+            height: calc(100% - 50px);
             overflow-y: auto;
-            background: rgba(0,0,0,0.3);
-            border-radius: 10px;
-            padding: 15px;
         }
 
         .code-line {
-            padding: 5px 10px;
+            padding: 8px 15px;
             margin: 2px 0;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            transition: all 0.3s;
+            border-radius: 5px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            transition: all 0.3s ease;
         }
 
         .code-line.current {
-            background: rgba(255, 193, 7, 0.4);
+            background: rgba(255, 193, 7, 0.3);
             border-left: 4px solid #ffc107;
+            transform: translateX(5px);
         }
 
         .code-line.executed {
-            background: rgba(40, 167, 69, 0.3);
+            background: rgba(40, 167, 69, 0.2);
+            border-left: 4px solid #28a745;
         }
 
-        .status {
-            background: rgba(0,0,0,0.4);
+        .status-bar {
+            background: rgba(0,0,0,0.3);
             padding: 15px;
             border-radius: 10px;
+            margin-top: 20px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
         }
 
-        .debug {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255,0,0,0.8);
-            color: white;
+        .step-info {
+            font-weight: bold;
+        }
+
+        .variables {
+            font-size: 14px;
+            background: rgba(255,255,255,0.1);
             padding: 10px;
             border-radius: 5px;
-            font-size: 12px;
-            max-width: 300px;
-            z-index: 1000;
         }
 
         @media (max-width: 768px) {
-            .main-area {
+            .main-content {
                 grid-template-columns: 1fr;
+                height: auto;
             }
             
-            .control-row {
+            .control-group {
                 flex-direction: column;
                 align-items: stretch;
-            }
-            
-            select, button, input {
-                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <div id="debug" class="debug" style="display: none;"></div>
-    
     <div class="container">
-        <h1>🚀 Algorithm Visualizer</h1>
+        <h1>🚀 Algorithm Visualizer & Dry Runner</h1>
         
         <div class="controls">
-            <div class="control-row">
+            <div class="control-group">
                 <label>Algorithm:</label>
-                <select id="algorithm">
-                    <option value="bfs">Breadth-First Search</option>
-                    <option value="dfs">Depth-First Search</option>
+                <select id="algorithmSelect">
+                    <option value="bfs">Breadth-First Search (BFS)</option>
+                    <option value="dfs">Depth-First Search (DFS)</option>
                     <option value="binarySearch">Binary Search</option>
                     <option value="bubbleSort">Bubble Sort</option>
                 </select>
                 
-                <label>Data:</label>
-                <input type="text" id="dataInput" placeholder="e.g., 5,3,8,1,9" value="5,3,8,4,7,6,2" />
-                <button id="generateBtn">Generate</button>
+                <label>Data Structure:</label>
+                <select id="structureSelect">
+                    <option value="graph">Graph</option>
+                    <option value="tree">Binary Tree</option>
+                    <option value="array">Array</option>
+                </select>
+                
+                <input type="text" id="inputData" placeholder="Enter data (e.g., 1,2,3,4,5)" />
+                <button id="generateBtn">Generate Structure</button>
             </div>
             
-            <div class="control-row">
+            <div class="control-group">
                 <button id="playBtn">▶ Play</button>
-                <button id="stepBtn">Step ⏭</button>
-                <button id="pauseBtn" disabled>⏸ Pause</button>
+                <button id="stepBtn">⏭ Step</button>
+                <button id="pauseBtn">⏸ Pause</button>
                 <button id="resetBtn">⏮ Reset</button>
-                
                 <label>Speed:</label>
-                <input type="range" id="speed" min="200" max="2000" value="1000" />
-                <span id="speedLabel">1.0x</span>
+                <input type="range" id="speedSlider" min="100" max="2000" value="1000" />
             </div>
         </div>
 
-        <div class="main-area">
-            <div class="panel">
+        <div class="main-content">
+            <div class="visualization-panel">
                 <div class="panel-title">Visualization</div>
-                <canvas id="canvas" width="450" height="350"></canvas>
+                <canvas id="canvas" width="600" height="500"></canvas>
             </div>
             
-            <div class="panel">
+            <div class="code-panel">
                 <div class="panel-title">Algorithm Code</div>
-                <div class="code-container" id="code">
-                    <div class="code-line">Select an algorithm to see code</div>
+                <div class="code-container" id="codeContainer">
+                    <!-- Code will be inserted here -->
                 </div>
             </div>
         </div>
 
-        <div class="status">
-            <div><strong>Step:</strong> <span id="stepCount">0 / 0</span></div>
-            <div><strong>Status:</strong> <span id="statusText">Ready</span></div>
+        <div class="status-bar">
+            <div class="step-info" id="stepInfo">Step 0 / 0</div>
+            <div class="variables" id="variables">Variables: Ready to start</div>
         </div>
     </div>
 
     <script>
-        // Debug function
-        function debug(message) {
-            console.log(message);
-            const debugEl = document.getElementById('debug');
-            if (debugEl) {
-                debugEl.style.display = 'block';
-                debugEl.textContent = message;
-                setTimeout(() => {
-                    debugEl.style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        class SimpleVisualizer {
+        class AlgorithmVisualizer {
             constructor() {
-                try {
-                    this.canvas = document.getElementById('canvas');
-                    this.ctx = this.canvas.getContext('2d');
-                    this.algorithm = 'bfs';
-                    this.data = [5,3,8,4,7,6,2];
-                    this.steps = [];
-                    this.currentStep = 0;
-                    this.isPlaying = false;
-                    this.interval = null;
-                    
-                    this.setupEvents();
-                    this.generateSteps();
-                    this.updateDisplay();
-                    
-                    debug('Visualizer initialized successfully');
-                } catch (error) {
-                    debug('Error initializing: ' + error.message);
-                }
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.currentAlgorithm = 'bfs';
+                this.currentStructure = 'graph';
+                this.data = [];
+                this.steps = [];
+                this.currentStep = 0;
+                this.isPlaying = false;
+                this.speed = 1000;
+                this.playInterval = null;
+                
+                this.setupEventListeners();
+                this.updateStructureOptions();
+                this.generateDefaultData();
             }
 
-            setupEvents() {
-                document.getElementById('algorithm').addEventListener('change', (e) => {
-                    this.algorithm = e.target.value;
-                    this.generateSteps();
-                    this.reset();
+            setupEventListeners() {
+                document.getElementById('algorithmSelect').addEventListener('change', (e) => {
+                    this.currentAlgorithm = e.target.value;
+                    this.updateStructureOptions();
+                    this.generateDefaultData();
+                });
+
+                document.getElementById('structureSelect').addEventListener('change', (e) => {
+                    this.currentStructure = e.target.value;
+                    this.generateDefaultData();
                 });
 
                 document.getElementById('generateBtn').addEventListener('click', () => {
-                    const input = document.getElementById('dataInput').value;
-                    if (input.trim()) {
-                        this.data = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
-                        this.generateSteps();
-                        this.reset();
-                    }
+                    this.generateDataFromInput();
                 });
 
-                document.getElementById('playBtn').addEventListener('click', () => this.play());
-                document.getElementById('stepBtn').addEventListener('click', () => this.step());
-                document.getElementById('pauseBtn').addEventListener('click', () => this.pause());
-                document.getElementById('resetBtn').addEventListener('click', () => this.reset());
-                
-                document.getElementById('speed').addEventListener('input', (e) => {
-                    const speed = parseInt(e.target.value);
-                    const label = document.getElementById('speedLabel');
-                    label.textContent = (2200 - speed) / 1000 + 'x';
+                document.getElementById('playBtn').addEventListener('click', () => {
+                    this.play();
+                });
+
+                document.getElementById('stepBtn').addEventListener('click', () => {
+                    this.step();
+                });
+
+                document.getElementById('pauseBtn').addEventListener('click', () => {
+                    this.pause();
+                });
+
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.reset();
+                });
+
+                document.getElementById('speedSlider').addEventListener('input', (e) => {
+                    this.speed = 2100 - parseInt(e.target.value);
                 });
             }
 
-            generateSteps() {
+            updateStructureOptions() {
+                const structureSelect = document.getElementById('structureSelect');
+                const options = {
+                    'bfs': ['graph', 'tree'],
+                    'dfs': ['graph', 'tree'],
+                    'binarySearch': ['array'],
+                    'bubbleSort': ['array']
+                };
+
+                structureSelect.innerHTML = '';
+                options[this.currentAlgorithm].forEach(opt => {
+                    const option = document.createElement('option');
+                    option.value = opt;
+                    option.textContent = opt.charAt(0).toUpperCase() + opt.slice(1);
+                    structureSelect.appendChild(option);
+                });
+                this.currentStructure = options[this.currentAlgorithm][0];
+            }
+
+            generateDefaultData() {
+                const defaults = {
+                    'graph': { nodes: [1,2,3,4,5,6], edges: [[1,2],[1,3],[2,4],[3,5],[3,6],[4,6]] },
+                    'tree': [4, 2, 6, 1, 3, 5, 7],
+                    'array': [64, 34, 25, 12, 22, 11, 90]
+                };
+
+                if (this.currentStructure === 'array') {
+                    this.data = [...defaults.array];
+                } else if (this.currentStructure === 'graph') {
+                    this.data = JSON.parse(JSON.stringify(defaults.graph));
+                } else if (this.currentStructure === 'tree') {
+                    this.data = [...defaults.tree];
+                }
+
+                this.generateAlgorithmSteps();
+                this.reset();
+            }
+
+            generateDataFromInput() {
+                const input = document.getElementById('inputData').value.trim();
+                if (!input) return;
+
+                const values = input.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x));
+                
+                if (this.currentStructure === 'array') {
+                    this.data = [...values];
+                } else if (this.currentStructure === 'graph') {
+                    // Create a simple connected graph
+                    const edges = [];
+                    for (let i = 0; i < values.length - 1; i++) {
+                        edges.push([values[i], values[i + 1]]);
+                    }
+                    this.data = { nodes: [...values], edges };
+                } else if (this.currentStructure === 'tree') {
+                    this.data = [...values];
+                }
+
+                this.generateAlgorithmSteps();
+                this.reset();
+            }
+
+            generateAlgorithmSteps() {
                 this.steps = [];
                 
-                try {
-                    switch (this.algorithm) {
-                        case 'bfs':
-                            this.generateBFS();
-                            break;
-                        case 'dfs':
-                            this.generateDFS();
-                            break;
-                        case 'binarySearch':
-                            this.generateBinarySearch();
-                            break;
-                        case 'bubbleSort':
-                            this.generateBubbleSort();
-                            break;
-                    }
-                    
-                    this.displayCode();
-                    debug('Generated ' + this.steps.length + ' steps');
-                } catch (error) {
-                    debug('Error generating steps: ' + error.message);
+                switch (this.currentAlgorithm) {
+                    case 'bfs':
+                        this.generateBFSSteps();
+                        break;
+                    case 'dfs':
+                        this.generateDFSSteps();
+                        break;
+                    case 'binarySearch':
+                        this.generateBinarySearchSteps();
+                        break;
+                    case 'bubbleSort':
+                        this.generateBubbleSortSteps();
+                        break;
                 }
+
+                this.displayCode();
             }
 
-            generateBFS() {
-                // Simple graph representation
-                const graph = this.createGraph();
-                const visited = [];
-                const queue = [this.data[0]];
-                
-                this.steps.push({
-                    line: 0,
-                    description: 'Initialize queue with start node',
-                    state: { queue: [this.data[0]], visited: [], current: null }
-                });
+            generateBFSSteps() {
+                if (this.currentStructure === 'graph') {
+                    const visited = [];
+                    const queue = [this.data.nodes[0]];
+                    const adjList = this.buildAdjacencyList();
 
-                while (queue.length > 0) {
-                    const current = queue.shift();
-                    
                     this.steps.push({
-                        line: 2,
-                        description: `Process node ${current}`,
-                        state: { queue: [...queue], visited: [...visited], current }
+                        line: 0,
+                        description: 'Initialize queue and visited set',
+                        state: { queue: [...queue], visited: [...visited], current: null }
                     });
 
-                    if (!visited.includes(current)) {
-                        visited.push(current);
+                    while (queue.length > 0) {
+                        const current = queue.shift();
                         
                         this.steps.push({
-                            line: 4,
-                            description: `Mark ${current} as visited`,
+                            line: 2,
+                            description: `Dequeue node ${current}`,
                             state: { queue: [...queue], visited: [...visited], current }
                         });
 
-                        // Add neighbors to queue
-                        const neighbors = graph[current] || [];
-                        neighbors.forEach(neighbor => {
-                            if (!visited.includes(neighbor) && !queue.includes(neighbor)) {
-                                queue.push(neighbor);
-                            }
-                        });
-                        
-                        if (neighbors.length > 0) {
+                        if (!visited.includes(current)) {
+                            visited.push(current);
+                            
                             this.steps.push({
-                                line: 6,
-                                description: `Add neighbors to queue`,
+                                line: 4,
+                                description: `Mark node ${current} as visited`,
                                 state: { queue: [...queue], visited: [...visited], current }
                             });
+
+                            const neighbors = adjList[current] || [];
+                            neighbors.forEach(neighbor => {
+                                if (!visited.includes(neighbor) && !queue.includes(neighbor)) {
+                                    queue.push(neighbor);
+                                }
+                            });
+
+                            if (neighbors.length > 0) {
+                                this.steps.push({
+                                    line: 6,
+                                    description: `Add unvisited neighbors to queue`,
+                                    state: { queue: [...queue], visited: [...visited], current }
+                                });
+                            }
                         }
                     }
                 }
             }
 
-            generateDFS() {
-                const graph = this.createGraph();
-                const visited = [];
-                const stack = [this.data[0]];
-                
-                this.steps.push({
-                    line: 0,
-                    description: 'Initialize stack with start node',
-                    state: { stack: [this.data[0]], visited: [], current: null }
-                });
+            generateDFSSteps() {
+                if (this.currentStructure === 'graph') {
+                    const visited = [];
+                    const stack = [this.data.nodes[0]];
+                    const adjList = this.buildAdjacencyList();
 
-                while (stack.length > 0) {
-                    const current = stack.pop();
-                    
                     this.steps.push({
-                        line: 2,
-                        description: `Pop node ${current}`,
-                        state: { stack: [...stack], visited: [...visited], current }
+                        line: 0,
+                        description: 'Initialize stack and visited set',
+                        state: { stack: [...stack], visited: [...visited], current: null }
                     });
 
-                    if (!visited.includes(current)) {
-                        visited.push(current);
+                    while (stack.length > 0) {
+                        const current = stack.pop();
                         
                         this.steps.push({
-                            line: 4,
-                            description: `Mark ${current} as visited`,
+                            line: 2,
+                            description: `Pop node ${current} from stack`,
                             state: { stack: [...stack], visited: [...visited], current }
                         });
 
-                        const neighbors = (graph[current] || []).slice().reverse();
-                        neighbors.forEach(neighbor => {
-                            if (!visited.includes(neighbor)) {
-                                stack.push(neighbor);
-                            }
-                        });
-                        
-                        if (neighbors.length > 0) {
+                        if (!visited.includes(current)) {
+                            visited.push(current);
+                            
                             this.steps.push({
-                                line: 6,
-                                description: `Push neighbors to stack`,
+                                line: 4,
+                                description: `Mark node ${current} as visited`,
                                 state: { stack: [...stack], visited: [...visited], current }
                             });
+
+                            const neighbors = (adjList[current] || []).slice().reverse();
+                            neighbors.forEach(neighbor => {
+                                if (!visited.includes(neighbor)) {
+                                    stack.push(neighbor);
+                                }
+                            });
+
+                            if (neighbors.length > 0) {
+                                this.steps.push({
+                                    line: 6,
+                                    description: `Add unvisited neighbors to stack`,
+                                    state: { stack: [...stack], visited: [...visited], current }
+                                });
+                            }
                         }
                     }
                 }
             }
 
-            generateBinarySearch() {
+            generateBinarySearchSteps() {
                 const arr = [...this.data].sort((a, b) => a - b);
                 const target = arr[Math.floor(arr.length / 2)];
                 let left = 0, right = arr.length - 1;
 
                 this.steps.push({
                     line: 0,
-                    description: `Search for ${target} in sorted array`,
-                    state: { arr, target, left, right, mid: -1 }
+                    description: `Initialize: searching for ${target}`,
+                    state: { arr: [...arr], target, left, right, mid: null, found: false }
                 });
 
                 while (left <= right) {
@@ -426,100 +481,120 @@
                     
                     this.steps.push({
                         line: 2,
-                        description: `Check middle element at index ${mid}`,
-                        state: { arr, target, left, right, mid }
+                        description: `Calculate mid = ${mid}, arr[${mid}] = ${arr[mid]}`,
+                        state: { arr: [...arr], target, left, right, mid, found: false }
                     });
 
                     if (arr[mid] === target) {
                         this.steps.push({
                             line: 4,
-                            description: `Found target ${target}!`,
-                            state: { arr, target, left, right, mid, found: true }
+                            description: `Found target ${target} at index ${mid}!`,
+                            state: { arr: [...arr], target, left, right, mid, found: true }
                         });
                         break;
                     } else if (arr[mid] < target) {
                         left = mid + 1;
                         this.steps.push({
                             line: 6,
-                            description: `Target is in right half`,
-                            state: { arr, target, left, right, mid }
+                            description: `arr[${mid}] < ${target}, search right half`,
+                            state: { arr: [...arr], target, left, right, mid, found: false }
                         });
                     } else {
                         right = mid - 1;
                         this.steps.push({
                             line: 8,
-                            description: `Target is in left half`,
-                            state: { arr, target, left, right, mid }
+                            description: `arr[${mid}] > ${target}, search left half`,
+                            state: { arr: [...arr], target, left, right, mid, found: false }
                         });
                     }
                 }
             }
 
-            generateBubbleSort() {
+            generateBubbleSortSteps() {
                 const arr = [...this.data];
                 const n = arr.length;
 
                 this.steps.push({
                     line: 0,
-                    description: 'Start Bubble Sort',
-                    state: { arr: [...arr], i: 0, j: 0 }
+                    description: `Starting Bubble Sort with array of length ${n}`,
+                    state: { arr: [...arr], i: 0, j: 0, swapped: false }
                 });
 
                 for (let i = 0; i < n - 1; i++) {
+                    let swapped = false;
+                    
+                    this.steps.push({
+                        line: 2,
+                        description: `Pass ${i + 1}: comparing adjacent elements`,
+                        state: { arr: [...arr], i, j: 0, swapped }
+                    });
+
                     for (let j = 0; j < n - i - 1; j++) {
                         this.steps.push({
-                            line: 2,
-                            description: `Compare arr[${j}] and arr[${j+1}]`,
-                            state: { arr: [...arr], i, j, comparing: [j, j+1] }
+                            line: 4,
+                            description: `Compare arr[${j}] = ${arr[j]} and arr[${j+1}] = ${arr[j+1]}`,
+                            state: { arr: [...arr], i, j, swapped }
                         });
 
                         if (arr[j] > arr[j + 1]) {
                             [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+                            swapped = true;
+                            
                             this.steps.push({
-                                line: 4,
-                                description: `Swap elements`,
-                                state: { arr: [...arr], i, j, swapped: [j, j+1] }
+                                line: 6,
+                                description: `Swap: arr[${j}] and arr[${j+1}]`,
+                                state: { arr: [...arr], i, j, swapped }
                             });
                         }
+                    }
+
+                    if (!swapped) {
+                        this.steps.push({
+                            line: 8,
+                            description: 'No swaps made - array is sorted!',
+                            state: { arr: [...arr], i, j: n - i - 1, swapped }
+                        });
+                        break;
                     }
                 }
 
                 this.steps.push({
-                    line: 6,
-                    description: 'Array is sorted!',
-                    state: { arr: [...arr], done: true }
+                    line: 9,
+                    description: 'Bubble Sort completed!',
+                    state: { arr: [...arr], i: n - 1, j: 0, swapped: false }
                 });
             }
 
-            createGraph() {
-                // Create a simple connected graph from the data
-                const graph = {};
-                this.data.forEach((node, i) => {
-                    graph[node] = [];
-                    if (i > 0) graph[node].push(this.data[i-1]);
-                    if (i < this.data.length - 1) graph[node].push(this.data[i+1]);
+            buildAdjacencyList() {
+                const adjList = {};
+                this.data.nodes.forEach(node => adjList[node] = []);
+                this.data.edges.forEach(([a, b]) => {
+                    adjList[a] = adjList[a] || [];
+                    adjList[b] = adjList[b] || [];
+                    adjList[a].push(b);
+                    adjList[b].push(a);
                 });
-                return graph;
+                return adjList;
             }
 
             displayCode() {
                 const codes = {
                     bfs: [
-                        'queue = [start_node]',
-                        'while queue not empty:',
+                        'queue = [start_node], visited = []',
+                        'while queue is not empty:',
                         '    current = queue.pop(0)',
-                        '    if current not visited:',
-                        '        mark current as visited',
-                        '        for neighbor in neighbors:',
+                        '    if current not in visited:',
+                        '        visited.append(current)',
+                        '        for neighbor in graph[current]:',
                         '            queue.append(neighbor)'
                     ],
                     dfs: [
-                        'stack = [start_node]',
-                        'while stack not empty:',
+                        'stack = [start_node], visited = []',
+                        'while stack is not empty:',
                         '    current = stack.pop()',
-                        '    if current not visited:',
-                        '        mark current as visited',
-                        '        for neighbor in neighbors:',
+                        '    if current not in visited:',
+                        '        visited.append(current)',
+                        '        for neighbor in graph[current]:',
                         '            stack.append(neighbor)'
                     ],
                     binarySearch: [
@@ -534,48 +609,49 @@
                         '        right = mid - 1'
                     ],
                     bubbleSort: [
-                        'for i in range(len(arr)):',
-                        '    for j in range(len(arr)-i-1):',
-                        '        if arr[j] > arr[j+1]:',
-                        '            swap arr[j] and arr[j+1]',
-                        '    # Continue until no swaps',
-                        '',
-                        'Array is now sorted'
+                        'for i in range(len(arr) - 1):',
+                        '    swapped = False',
+                        '    for j in range(len(arr) - i - 1):',
+                        '        if arr[j] > arr[j + 1]:',
+                        '            # Compare elements',
+                        '            arr[j], arr[j + 1] = arr[j + 1], arr[j]',
+                        '            swapped = True',
+                        '    if not swapped:',
+                        '        break',
+                        '# Array is now sorted'
                     ]
                 };
 
-                const container = document.getElementById('code');
+                const container = document.getElementById('codeContainer');
                 container.innerHTML = '';
                 
-                const codeLines = codes[this.algorithm] || ['No code available'];
+                const codeLines = codes[this.currentAlgorithm] || [];
                 codeLines.forEach((line, i) => {
                     const div = document.createElement('div');
                     div.className = 'code-line';
-                    div.textContent = line || ' ';
+                    div.textContent = line;
                     div.id = `line-${i}`;
                     container.appendChild(div);
                 });
             }
 
             draw() {
-                try {
-                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                    
-                    if (['bfs', 'dfs'].includes(this.algorithm)) {
-                        this.drawGraph();
-                    } else {
-                        this.drawArray();
-                    }
-                } catch (error) {
-                    debug('Draw error: ' + error.message);
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                if (this.currentStructure === 'array') {
+                    this.drawArray();
+                } else if (this.currentStructure === 'graph') {
+                    this.drawGraph();
+                } else if (this.currentStructure === 'tree') {
+                    this.drawTree();
                 }
             }
 
             drawArray() {
-                const current = this.steps[this.currentStep];
-                const arr = current?.state?.arr || this.data;
-                const cellWidth = Math.min(50, (this.canvas.width - 40) / arr.length);
-                const cellHeight = 40;
+                const current = this.getCurrentStepState();
+                const arr = current?.arr || this.data;
+                const cellWidth = Math.min(60, (this.canvas.width - 100) / arr.length);
+                const cellHeight = 50;
                 const startX = (this.canvas.width - cellWidth * arr.length) / 2;
                 const startY = this.canvas.height / 2 - cellHeight / 2;
 
@@ -583,87 +659,98 @@
                     const x = startX + i * cellWidth;
                     const y = startY;
 
-                    // Determine color
-                    let color = 'rgba(255,255,255,0.3)';
-                    if (current?.state) {
-                        const state = current.state;
-                        if (this.algorithm === 'binarySearch') {
-                            if (i === state.mid) color = '#ffc107';
-                            else if (i >= state.left && i <= state.right) color = 'rgba(40,167,69,0.4)';
-                        } else if (this.algorithm === 'bubbleSort') {
-                            if (state.comparing && state.comparing.includes(i)) color = '#ffc107';
-                            else if (state.swapped && state.swapped.includes(i)) color = '#ff6b6b';
+                    let color = 'rgba(255,255,255,0.2)';
+                    if (current) {
+                        if (this.currentAlgorithm === 'binarySearch') {
+                            if (i === current.mid) color = '#ffc107';
+                            else if (i >= current.left && i <= current.right) color = 'rgba(40,167,69,0.3)';
+                        } else if (this.currentAlgorithm === 'bubbleSort') {
+                            if (i === current.j || i === current.j + 1) color = '#ffc107';
+                            else if (i >= arr.length - current.i - 1) color = 'rgba(40,167,69,0.3)';
                         }
                     }
 
-                    // Draw cell
                     this.ctx.fillStyle = color;
-                    this.ctx.fillRect(x, y, cellWidth - 2, cellHeight);
+                    this.ctx.fillRect(x, y, cellWidth, cellHeight);
                     
                     this.ctx.strokeStyle = 'white';
                     this.ctx.lineWidth = 2;
-                    this.ctx.strokeRect(x, y, cellWidth - 2, cellHeight);
+                    this.ctx.strokeRect(x, y, cellWidth, cellHeight);
 
-                    // Draw value
                     this.ctx.fillStyle = 'white';
-                    this.ctx.font = '16px Arial';
+                    this.ctx.font = '16px Monaco';
                     this.ctx.textAlign = 'center';
-                    this.ctx.fillText(value.toString(), x + cellWidth/2 - 1, y + cellHeight/2 + 6);
-                    
-                    // Draw index
-                    this.ctx.font = '12px Arial';
-                    this.ctx.fillText(i.toString(), x + cellWidth/2 - 1, y - 8);
+                    this.ctx.fillText(value.toString(), x + cellWidth/2, y + cellHeight/2 + 6);
+
+                    this.ctx.font = '12px Monaco';
+                    this.ctx.fillText(i.toString(), x + cellWidth/2, y - 10);
                 });
+
+                if (current && this.currentAlgorithm === 'binarySearch') {
+                    if (current.left !== undefined) {
+                        const x = startX + current.left * cellWidth + cellWidth/2;
+                        this.ctx.fillStyle = '#28a745';
+                        this.ctx.fillText('L', x, startY + cellHeight + 20);
+                    }
+                    if (current.right !== undefined) {
+                        const x = startX + current.right * cellWidth + cellWidth/2;
+                        this.ctx.fillStyle = '#dc3545';
+                        this.ctx.fillText('R', x, startY + cellHeight + 20);
+                    }
+                    if (current.mid !== undefined && current.mid !== null) {
+                        const x = startX + current.mid * cellWidth + cellWidth/2;
+                        this.ctx.fillStyle = '#ffc107';
+                        this.ctx.fillText('M', x, startY + cellHeight + 35);
+                    }
+                }
             }
 
             drawGraph() {
-                const current = this.steps[this.currentStep];
-                const nodes = this.data;
+                const current = this.getCurrentStepState();
+                const nodes = this.data.nodes;
+                const edges = this.data.edges;
+                
                 const centerX = this.canvas.width / 2;
                 const centerY = this.canvas.height / 2;
-                const radius = 100;
-
-                // Calculate positions
-                const positions = {};
+                const radius = Math.min(centerX, centerY) - 80;
+                
+                const nodePositions = {};
                 nodes.forEach((node, i) => {
-                    const angle = (2 * Math.PI * i) / nodes.length;
-                    positions[node] = {
+                    const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2;
+                    nodePositions[node] = {
                         x: centerX + radius * Math.cos(angle),
                         y: centerY + radius * Math.sin(angle)
                     };
                 });
 
-                // Draw edges
                 this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
                 this.ctx.lineWidth = 2;
-                nodes.forEach((node, i) => {
-                    if (i < nodes.length - 1) {
-                        const from = positions[node];
-                        const to = positions[nodes[i + 1]];
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(from.x, from.y);
-                        this.ctx.lineTo(to.x, to.y);
-                        this.ctx.stroke();
-                    }
+                edges.forEach(([from, to]) => {
+                    const fromPos = nodePositions[from];
+                    const toPos = nodePositions[to];
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(fromPos.x, fromPos.y);
+                    this.ctx.lineTo(toPos.x, toPos.y);
+                    this.ctx.stroke();
                 });
 
-                // Draw nodes
                 nodes.forEach(node => {
-                    const pos = positions[node];
+                    const pos = nodePositions[node];
                     let color = 'rgba(255,255,255,0.3)';
                     
-                    if (current?.state) {
-                        if (current.state.visited && current.state.visited.includes(node)) {
+                    if (current) {
+                        if (current.visited && current.visited.includes(node)) {
                             color = '#28a745';
                         }
-                        if (current.state.current === node) {
+                        if (current.current === node) {
                             color = '#ffc107';
                         }
                     }
 
                     this.ctx.fillStyle = color;
                     this.ctx.beginPath();
-                    this.ctx.arc(pos.x, pos.y, 25, 0, 2 * Math.PI);
+                    this.ctx.arc(pos.x, pos.y, 30, 0, 2 * Math.PI);
                     this.ctx.fill();
                     
                     this.ctx.strokeStyle = 'white';
@@ -671,38 +758,116 @@
                     this.ctx.stroke();
 
                     this.ctx.fillStyle = 'white';
-                    this.ctx.font = '16px Arial';
+                    this.ctx.font = '18px Monaco';
                     this.ctx.textAlign = 'center';
                     this.ctx.fillText(node.toString(), pos.x, pos.y + 6);
                 });
             }
 
-            updateDisplay() {
-                try {
-                    // Update step counter
-                    document.getElementById('stepCount').textContent = 
-                        `${this.currentStep} / ${Math.max(0, this.steps.length - 1)}`;
+            drawTree() {
+                const nodes = this.data;
+                if (!nodes || nodes.length === 0) return;
+
+                const levels = Math.ceil(Math.log2(nodes.length + 1));
+                const startY = 60;
+                const levelHeight = Math.min(80, (this.canvas.height - 120) / levels);
+
+                nodes.forEach((node, i) => {
+                    const level = Math.floor(Math.log2(i + 1));
+                    const posInLevel = i - (Math.pow(2, level) - 1);
+                    const totalInLevel = Math.pow(2, level);
                     
-                    // Update status
-                    const statusText = this.steps[this.currentStep]?.description || 'Ready';
-                    document.getElementById('statusText').textContent = statusText;
+                    const x = (this.canvas.width / (totalInLevel + 1)) * (posInLevel + 1);
+                    const y = startY + level * levelHeight;
+
+                    this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 25, 0, 2 * Math.PI);
+                    this.ctx.fill();
                     
-                    // Update code highlighting
-                    document.querySelectorAll('.code-line').forEach(line => {
-                        line.classList.remove('current', 'executed');
-                    });
+                    this.ctx.strokeStyle = 'white';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.stroke();
+
+                    this.ctx.fillStyle = 'white';
+                    this.ctx.font = '16px Monaco';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(node.toString(), x, y + 6);
+
+                    // Draw connections to children
+                    const leftChild = 2 * i + 1;
+                    const rightChild = 2 * i + 2;
                     
-                    if (this.steps[this.currentStep]) {
-                        const currentLineEl = document.getElementById(`line-${this.steps[this.currentStep].line}`);
-                        if (currentLineEl) {
-                            currentLineEl.classList.add('current');
-                        }
+                    if (leftChild < nodes.length) {
+                        const childLevel = Math.floor(Math.log2(leftChild + 1));
+                        const childPosInLevel = leftChild - (Math.pow(2, childLevel) - 1);
+                        const childTotalInLevel = Math.pow(2, childLevel);
+                        const childX = (this.canvas.width / (childTotalInLevel + 1)) * (childPosInLevel + 1);
+                        const childY = startY + childLevel * levelHeight;
+                        
+                        this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x, y + 25);
+                        this.ctx.lineTo(childX, childY - 25);
+                        this.ctx.stroke();
                     }
                     
-                    this.draw();
-                } catch (error) {
-                    debug('Update display error: ' + error.message);
+                    if (rightChild < nodes.length) {
+                        const childLevel = Math.floor(Math.log2(rightChild + 1));
+                        const childPosInLevel = rightChild - (Math.pow(2, childLevel) - 1);
+                        const childTotalInLevel = Math.pow(2, childLevel);
+                        const childX = (this.canvas.width / (childTotalInLevel + 1)) * (childPosInLevel + 1);
+                        const childY = startY + childLevel * levelHeight;
+                        
+                        this.ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x, y + 25);
+                        this.ctx.lineTo(childX, childY - 25);
+                        this.ctx.stroke();
+                    }
+                });
+            }
+
+            getCurrentStepState() {
+                return this.steps[this.currentStep]?.state || null;
+            }
+
+            updateUI() {
+                const stepInfo = document.getElementById('stepInfo');
+                const variables = document.getElementById('variables');
+                
+                stepInfo.textContent = `Step ${this.currentStep} / ${Math.max(0, this.steps.length - 1)}`;
+                
+                const current = this.getCurrentStepState();
+                if (current && this.steps[this.currentStep]) {
+                    variables.textContent = `Variables: ${this.steps[this.currentStep].description}`;
+                } else {
+                    variables.textContent = 'Variables: Ready to start';
                 }
+
+                // Highlight current code line
+                document.querySelectorAll('.code-line').forEach(line => {
+                    line.classList.remove('current', 'executed');
+                });
+
+                if (this.steps[this.currentStep]) {
+                    const currentLine = document.getElementById(`line-${this.steps[this.currentStep].line}`);
+                    if (currentLine) {
+                        currentLine.classList.add('current');
+                    }
+
+                    // Mark previous lines as executed
+                    for (let i = 0; i < this.steps[this.currentStep].line; i++) {
+                        const line = document.getElementById(`line-${i}`);
+                        if (line && !line.classList.contains('current')) {
+                            line.classList.add('executed');
+                        }
+                    }
+                }
+
+                this.draw();
             }
 
             play() {
@@ -711,14 +876,13 @@
                 this.isPlaying = true;
                 document.getElementById('playBtn').disabled = true;
                 document.getElementById('pauseBtn').disabled = false;
-                
-                const speed = 2200 - parseInt(document.getElementById('speed').value);
-                this.interval = setInterval(() => {
+
+                this.playInterval = setInterval(() => {
                     this.step();
                     if (this.currentStep >= this.steps.length - 1) {
                         this.pause();
                     }
-                }, speed);
+                }, this.speed);
             }
 
             pause() {
@@ -726,34 +890,29 @@
                 document.getElementById('playBtn').disabled = false;
                 document.getElementById('pauseBtn').disabled = true;
                 
-                if (this.interval) {
-                    clearInterval(this.interval);
-                    this.interval = null;
+                if (this.playInterval) {
+                    clearInterval(this.playInterval);
+                    this.playInterval = null;
                 }
             }
 
             step() {
                 if (this.currentStep < this.steps.length - 1) {
                     this.currentStep++;
-                    this.updateDisplay();
+                    this.updateUI();
                 }
             }
 
             reset() {
                 this.pause();
                 this.currentStep = 0;
-                this.updateDisplay();
+                this.updateUI();
             }
         }
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                new SimpleVisualizer();
-            } catch (error) {
-                alert('Error loading visualizer: ' + error.message);
-                console.error('Initialization error:', error);
-            }
+        // Initialize the visualizer when the page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            new AlgorithmVisualizer();
         });
     </script>
 </body>
